@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0F1219">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📱</text></svg>">
+<title>Suivi — Ilyes Phone Service</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--bg:#0F1219;--sf:#171C26;--sf2:#1E2433;--brd:#272F3E;--mute:#5A6577;--soft:#8B95A8;--ink:#D9DFE8;--white:#F0F2F5;
+--orange:#E8852B;--green:#2ECC71;--red:#E74C3C;--purple:#8B5CF6;--teal:#0EA5A9;--blue:#3B82F6}
+body{font-family:'SF Pro Display',-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif;background:var(--bg);color:var(--ink);
+     min-height:100vh;min-height:100dvh;overflow-x:hidden}
+/* ── Header ── */
+.hdr{padding:calc(env(safe-area-inset-top,12px) + 14px) 16px 16px;background:linear-gradient(170deg,#1A2030 0%,var(--bg) 100%);text-align:center}
+.hdr .shop{font-size:12px;font-weight:700;letter-spacing:1.5px;color:var(--orange);text-transform:uppercase}
+.hdr h1{font-size:17px;font-weight:800;color:var(--white);margin-top:6px}
+.hdr .sub{font-size:13px;color:var(--soft);margin-top:3px}
+/* ── Segments (progress bar) ── */
+.seg-bar{display:flex;gap:3px;padding:0 16px;margin:14px 0 4px}
+.seg{flex:1;height:6px;border-radius:3px;background:var(--brd);transition:background .4s}
+.seg.done{background:var(--green)}.seg.now{background:var(--orange);animation:glow 1.6s infinite}
+@keyframes glow{0%,100%{opacity:1}50%{opacity:.5}}
+.seg-labels{display:flex;justify-content:space-between;padding:0 16px;font-size:10px;color:var(--mute);margin-bottom:16px}
+/* ── Cards ── */
+.cd{background:var(--sf);border:1px solid var(--brd);border-radius:16px;padding:16px;margin:0 12px 10px}
+.cd-flush{border-radius:16px;overflow:hidden;margin:0 12px 10px;border:1px solid var(--brd)}
+.lb{font-size:10px;font-weight:800;color:var(--mute);letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px}
+.vl{font-size:15px;font-weight:600;margin-bottom:10px;color:var(--white)}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:800}
+/* ── Timeline ── */
+.tl-item{display:flex;gap:12px;padding:12px 16px;position:relative}
+.tl-item+.tl-item{border-top:1px solid var(--brd)}
+.tl-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;
+        flex-shrink:0;border:2px solid var(--brd);background:var(--bg);z-index:2}
+.tl-dot.done{background:var(--green);border-color:var(--green);color:#fff}
+.tl-dot.now{background:var(--orange);border-color:var(--orange);color:#fff;animation:pulse 2s infinite}
+.tl-dot.wait{opacity:.25}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(232,133,43,.45)}60%{box-shadow:0 0 0 10px rgba(232,133,43,0)}}
+.tl-txt{flex:1;min-width:0}.tl-txt .nm{font-size:14px;font-weight:700}.tl-txt .ds{font-size:12px;color:var(--soft);margin-top:1px}
+.tl-txt .active-tag{display:inline-block;margin-top:4px;font-size:11px;font-weight:800;padding:2px 8px;border-radius:8px}
+/* ── Devis ── */
+.devis-box{border:2px solid var(--purple);border-radius:18px;margin:0 12px 10px;overflow:hidden;background:var(--sf)}
+.devis-top{padding:20px 16px;text-align:center;background:linear-gradient(170deg,rgba(139,92,246,.12),transparent)}
+.devis-prix{font-size:38px;font-weight:900;color:var(--purple);line-height:1}
+.devis-note{margin:0 16px;padding:12px 14px;background:var(--sf2);border-radius:12px;font-size:13px;line-height:1.55;color:var(--soft);margin-bottom:14px}
+.devis-btns{padding:0 16px 16px;display:flex;gap:10px}
+.devis-btns button{flex:1;padding:16px;border-radius:14px;border:none;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer}
+.btn-accept{background:var(--green);color:#fff}.btn-refuse{background:transparent;color:var(--red);border:2px solid var(--red)!important}
+/* ── Finance ── */
+.fin-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.fin-cell{background:var(--bg);border:1px solid var(--brd);border-radius:12px;padding:12px;text-align:center}
+.fin-cell .n{font-size:20px;font-weight:800;color:var(--white)}.fin-cell .l{font-size:10px;color:var(--mute);margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
+.fin-cell.accent .n{color:var(--red);font-size:22px}
+.fin-cell.paid .n{color:var(--green)}
+/* ── Garantie ── */
+.gar-card{border:2px solid var(--green);border-radius:18px;padding:22px;text-align:center;margin:0 12px 10px;background:linear-gradient(170deg,rgba(46,204,113,.06),transparent)}
+.gar-card .days{font-size:34px;font-weight:900;color:var(--green);line-height:1}
+.gar-card .label{font-size:13px;color:var(--soft);margin-top:6px}
+.gar-card .detail{font-size:12px;color:var(--mute);margin-top:10px;line-height:1.5}
+/* ── Actions ── */
+.actions{padding:0 12px;margin-bottom:10px}
+.act-btn{display:flex;align-items:center;gap:11px;width:100%;padding:14px 16px;background:var(--sf);border:1px solid var(--brd);
+         border-radius:14px;margin-bottom:8px;text-decoration:none;color:var(--white);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer}
+.act-btn:active{border-color:var(--orange);background:var(--sf2)}
+.act-btn .ico{font-size:22px;flex-shrink:0;width:28px;text-align:center}
+.act-btn .sub{font-size:12px;color:var(--soft);font-weight:400;margin-top:1px}
+.act-btn.wa{background:#25D366;border-color:#25D366;color:#fff}
+/* ── Barcode ── */
+.barcode{text-align:center;padding:10px 0;margin:6px 0}
+.barcode svg{max-width:200px}
+.barcode .num{font-family:'Courier New',monospace;font-size:13px;font-weight:700;letter-spacing:2px;margin-top:4px;color:var(--mute)}
+/* ── Message contextuel ── */
+.ctx-msg{margin:0 12px 10px;padding:14px 16px;border-radius:14px;font-size:13.5px;line-height:1.55;font-weight:500}
+/* ── Footer ── */
+.foot{text-align:center;padding:20px 14px calc(env(safe-area-inset-bottom,8px) + 16px);font-size:11px;color:#3A4255;line-height:1.7}
+.foot b{color:var(--mute)}
+/* ── Étoiles ── */
+.stars{display:flex;gap:6px;justify-content:center;margin:12px 0}
+.star{font-size:36px;cursor:pointer;filter:grayscale(1) opacity(.3);transition:all .15s}
+.star.lit{filter:none}.star:active{transform:scale(1.15)}
+textarea{width:100%;background:var(--sf2);border:1px solid var(--brd);border-radius:12px;color:var(--ink);font-family:inherit;font-size:13px;padding:12px;resize:vertical;min-height:50px;margin-top:8px}
+.btn-send{width:100%;padding:14px;border-radius:12px;border:none;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer;margin-top:8px;background:var(--orange);color:#fff}
+.hidden{display:none!important}
+/* ── Tabs ── */
+.tabs{display:flex;gap:0;padding:0 12px;margin-bottom:14px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tab{flex-shrink:0;padding:8px 14px;font-size:12px;font-weight:700;color:var(--mute);cursor:pointer;border-radius:10px;white-space:nowrap;transition:all .15s}
+.tab.on{color:var(--orange);background:rgba(232,133,43,.1)}
+.pane{display:none}.pane.on{display:block}
+/* ── Horaires ── */
+.hours-row{display:flex;justify-content:space-between;padding:8px 0;font-size:13.5px;font-weight:500}
+.hours-row+.hours-row{border-top:1px solid var(--brd)}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="shop">Ilyes Phone Service</div>
+  <h1 id="hdr-title">Espace Client</h1>
+  <div class="sub" id="hdr-sub"></div>
+</div>
+
+<div id="seg"></div>
+
+<div class="tabs">
+  <div class="tab on" data-p="suivi">Suivi</div>
+  <div class="tab" data-p="garantie">Garantie</div>
+  <div class="tab" data-p="avis">Avis</div>
+  <div class="tab" data-p="contact">Contact</div>
+</div>
+
+<div class="pane on" id="p-suivi"><div id="main"></div></div>
+
+<div class="pane" id="p-garantie"><div id="gar-content"></div></div>
+
+<div class="pane" id="p-avis">
+  <div class="cd" id="avis-form">
+    <div class="lb">Votre avis</div>
+    <div style="font-size:13px;color:var(--soft);margin:4px 0 6px">Comment s'est passee votre experience ?</div>
+    <div class="stars" id="stars-box"></div>
+    <textarea id="avis-txt" placeholder="Un commentaire ? (optionnel)"></textarea>
+    <button class="btn-send" onclick="sendAvis()">Envoyer</button>
+  </div>
+  <div id="avis-ok" class="hidden cd" style="text-align:center;padding:28px">
+    <div style="font-size:44px">🙏</div>
+    <div style="font-size:16px;font-weight:700;margin:8px 0;color:var(--white)">Merci !</div>
+    <div style="font-size:13px;color:var(--soft)">Votre avis nous aide a nous ameliorer.</div>
+  </div>
+</div>
+
+<div class="pane" id="p-contact">
+  <div class="actions">
+    <a class="act-btn wa" href="https://wa.me/213540101412"><span class="ico">💬</span><span>WhatsApp<br><span class="sub">Envoyer un message</span></span></a>
+    <a class="act-btn" href="tel:+213540101412"><span class="ico">📞</span><span>Appeler<br><span class="sub">0540 10 14 12</span></span></a>
+    <a class="act-btn" href="sms:+213540101412"><span class="ico">✉️</span><span>SMS<br><span class="sub">Envoyer un texto</span></span></a>
+    <a class="act-btn" href="https://www.google.com/maps/search/?api=1&query=Ilyes+Phone+Service+16+Rue+Mohamed+Mahdid+Sidi+Lakhdar+Mostaganem" target="_blank"><span class="ico">📍</span><span>Itineraire<br><span class="sub">16 Rue Mohamed Mahdid, Sidi Lakhdar</span></span></a>
+  </div>
+  <div class="cd">
+    <div class="lb">Horaires d'ouverture</div>
+    <div style="margin-top:8px">
+      <div class="hours-row"><span>Samedi</span><span style="color:var(--white)">09:00 — 19:00</span></div>
+      <div class="hours-row"><span>Dimanche</span><span style="color:var(--white)">09:00 — 19:00</span></div>
+      <div class="hours-row"><span>Lundi</span><span style="color:var(--white)">09:00 — 19:00</span></div>
+      <div class="hours-row"><span>Mardi</span><span style="color:var(--white)">09:00 — 19:00</span></div>
+      <div class="hours-row"><span>Mercredi</span><span style="color:var(--white)">09:00 — 19:00</span></div>
+      <div class="hours-row"><span>Jeudi</span><span style="color:var(--white)">09:00 — 19:00</span></div>
+      <div class="hours-row"><span style="color:var(--red)">Vendredi</span><span style="color:var(--red)">Ferme</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="foot"><b>Ilyes Phone Service</b><br>16 Rue Mohamed Mahdid · Sidi Lakhdar · Mostaganem<br>📞 0540 10 14 12</div>
+
+<script>
+// ── Configuration Firebase (remplie via les réglages de l'app) ──
+// L'URL de ta base Firebase Realtime Database (ex: https://ilyes-xxxxx-default-rtdb.firebaseio.com)
+window.FIREBASE_URL = '';
+// Essayer de lire depuis les paramètres de l'URL (l'app les injecte)
+try {
+  var P2 = new URLSearchParams(location.search);
+  if(P2.get('fb')) window.FIREBASE_URL = decodeURIComponent(P2.get('fb'));
+} catch(e){}
+
+// Tabs
+document.querySelectorAll('.tab').forEach(function(t){t.onclick=function(){
+  document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on')});
+  document.querySelectorAll('.pane').forEach(function(x){x.classList.remove('on')});
+  t.classList.add('on');var p=document.getElementById('p-'+t.dataset.p);if(p)p.classList.add('on');
+}});
+
+// ── Configuration cloud (Supabase) ──
+var CLOUD_URL = '';
+var CLOUD_KEY = '';
+// Les identifiants sont normalement injectés via le hash (_cu/_ck) — le fallback ci-dessous est pour le mode local
+var CLOUD_FALLBACK_URL = 'https://xgouaqyjpnkarhauzyyv.supabase.co';
+var CLOUD_FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhnb3VhcXlqcG5rYXJoYXV6eXl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMzAxMDMsImV4cCI6MjEwMTgwNjEwM30.P-KDRuWX1QclZ7-5F_OkVq-SxGAoL1c8y1alHqGWbdc';
+
+// Data
+var B=null;
+try{
+  var raw=location.hash.slice(1);
+  if(raw) B=JSON.parse(decodeURIComponent(escape(atob(raw))));
+  if(B && B._cu) CLOUD_URL = B._cu;
+  if(B && B._ck) CLOUD_KEY = B._ck;
+}catch(e){}
+
+// ── Code-barres Code 128B (même format que le ticket imprimé) ──
+function c128Encode(text){
+  var C128={32:0,33:1,34:2,35:3,36:4,37:5,38:6,39:7,40:8,41:9,42:10,43:11,44:12,45:13,46:14,47:15,48:16,49:17,50:18,51:19,52:20,53:21,54:22,55:23,56:24,57:25,58:26,59:27,60:28,61:29,62:30,63:31,64:32,65:33,66:34,67:35,68:36,69:37,70:38,71:39,72:40,73:41,74:42,75:43,76:44,77:45,78:46,79:47,80:48,81:49,82:50,83:51,84:52,85:53,86:54,87:55,88:56,89:57,90:58,91:59,92:60,93:61,94:62,95:63,96:64,97:65,98:66,99:67,100:68,101:69,102:70,103:71,104:72,105:73,106:74,107:75,108:76,109:77,110:78,111:79,112:80,113:81,114:82,115:83,116:84,117:85,118:86,119:87,120:88,121:89,122:90,123:91,124:92,125:93,126:94};
+  var PAT=['11011001100','11001101100','11001100110','10010011000','10010001100','10001001100','10011001000','10011000100','10001100100','11001001000','11001000100','11000100100','10110011100','10011011100','10011001110','10111001100','10011101100','10011100110','11001110010','11001011100','11001001110','11011100100','10011100010','10111101110','10111011000','10001110110','10001011110','10110001110','11101000110','11100010110','11011110100','11001011110','11110110100','11110010100','11110010010','11011011110','11011110110','11100110010','11110011010','10100110000','10100001100','10010110000','10010000110','10000101100','10000100110','10110010000','10110000100','10011010000','10011000010','10000110100','10000110010','11000010010','11001010000','11110111010','11000010100','10001111010','10100111100','10010111100','10000100010','10000101000','11101011110','11110101110','11010000100','11010010000','11010011100','1100011101011'];
+  var start=104;
+  var codes=[start];var sum=start;
+  for(var i=0;i<text.length;i++){var cc=C128[text.charCodeAt(i)];if(cc===undefined)cc=0;codes.push(cc);sum+=cc*(i+1);}
+  codes.push(sum%103);codes.push(106);
+  var bits='';for(var j=0;j<codes.length;j++)bits+=PAT[codes[j]];
+  return bits;
+}
+
+function renderBarcodeSVG(text, w, h){
+  var bits = c128Encode(text);
+  var bw = w / bits.length;
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'">';
+  for(var i=0;i<bits.length;i++){
+    if(bits[i]==='1') svg += '<rect x="'+(i*bw).toFixed(2)+'" y="0" width="'+bw.toFixed(2)+'" height="'+h+'" fill="#fff"/>';
+  }
+  svg += '</svg>';
+  return svg;
+}
+
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+var ST={
+  c:{lbl:'En cours de reparation',   icon:'\uD83D\uDD27',color:'var(--orange)',bg:'rgba(232,133,43,.12)',step:3},
+  a:{lbl:'En attente de piece',      icon:'\uD83D\uDCE6',color:'var(--mute)',  bg:'rgba(90,101,119,.12)',step:2},
+  d:{lbl:'Devis en attente',         icon:'\uD83D\uDCCB',color:'var(--purple)',bg:'rgba(139,92,246,.12)',step:2},
+  r:{lbl:'Repare',                   icon:'\u2705',      color:'var(--green)', bg:'rgba(46,204,113,.12)',step:5},
+  n:{lbl:'Non reparable',            icon:'\u274C',      color:'var(--red)',   bg:'rgba(231,76,60,.12)', step:5},
+  t:{lbl:'En test',                  icon:'\uD83D\uDD2C',color:'var(--teal)',  bg:'rgba(14,165,169,.12)',step:4},
+  g:{lbl:'Recupere',                 icon:'\uD83C\uDFE0',color:'var(--green)', bg:'rgba(46,204,113,.12)',step:6}
+};
+var STEPS=['Recu','Diagnostic','Reparation','Tests','Pret','Recupere'];
+var SICONS=['\uD83D\uDCE5','\uD83D\uDD0D','\uD83D\uDD27','\uD83E\uDDEA','\uD83D\uDCF1','\u2705'];
+var SDESC=['Appareil recu a l\'atelier','Analyse de la panne','Intervention technique','Verification du fonctionnement','Pret a recuperer','Rendu au client'];
+
+if(!B){
+  document.getElementById('main').innerHTML='<div class="cd" style="text-align:center;padding:36px"><div style="font-size:44px">\uD83D\uDD0D</div><div style="font-size:16px;font-weight:700;margin:10px 0;color:var(--white)">Lien invalide</div><div style="font-size:13px;color:var(--soft);line-height:1.5">Scannez le QR code sur votre ticket<br>ou contactez le 0540 10 14 12</div></div>';
+  document.getElementById('seg').innerHTML='';
+} else { render(B); }
+
+function render(b){
+  var s=ST[b.s]||ST.c, step=s.step, total=6;
+  document.getElementById('hdr-title').textContent=esc(b.mod||'Appareil');
+  document.getElementById('hdr-sub').textContent='Bon #'+b.id+(b.date?' \u00B7 Depose le '+b.date:'');
+  document.title='Bon #'+b.id+' \u2014 '+s.lbl+' \u2014 Ilyes Phone Service';
+
+  // Barre de progression
+  var sg='<div class="seg-bar">';
+  for(var i=1;i<=total;i++) sg+='<div class="seg '+(i<step?'done':(i===step?'now':''))+'"></div>';
+  sg+='</div><div class="seg-labels"><span>Recu</span><span>Pret</span></div>';
+  document.getElementById('seg').innerHTML=sg;
+
+  var h='';
+  // Badge statut
+  h+='<div class="cd" style="text-align:center">';
+  h+='<div class="badge" style="background:'+s.bg+';color:'+s.color+'">'+s.icon+' '+s.lbl+'</div>';
+  h+='</div>';
+
+  // Message contextuel
+  var msgs={
+    r:{bg:'rgba(46,204,113,.1)',brd:'var(--green)',txt:'\u2705 Votre appareil est <b>pret</b> ! Passez le recuperer a l\'atelier.'},
+    n:{bg:'rgba(231,76,60,.1)',brd:'var(--red)',txt:'\u274C <b>Reparation impossible.</b> Contactez-nous pour recuperer votre appareil.'},
+    a:{bg:'rgba(90,101,119,.08)',brd:'var(--mute)',txt:'\uD83D\uDCE6 <b>Piece en commande.</b> Nous vous contacterons des qu\'elle arrive.'},
+    g:{bg:'rgba(46,204,113,.08)',brd:'var(--green)',txt:'\uD83C\uDFE0 <b>Recupere.</b> Merci pour votre confiance !'},
+    d:{bg:'rgba(139,92,246,.08)',brd:'var(--purple)',txt:'\uD83D\uDCCB Un <b>devis</b> vous a ete soumis. Faites defiler pour accepter ou refuser.'}
+  };
+  if(msgs[b.s]) h+='<div class="ctx-msg" style="background:'+msgs[b.s].bg+';border:1px solid '+msgs[b.s].brd+'">'+msgs[b.s].txt+'</div>';
+
+  // ── DEVIS INTERACTIF ──
+  if(b.s==='d' && b.cout){
+    var cout=Number(b.cout)||0, vers=Number(b.vers)||0, reste=Math.max(0,cout-vers);
+    h+='<div class="devis-box">';
+    h+='<div class="devis-top">';
+    h+='<div style="font-size:12px;color:var(--soft);margin-bottom:8px">\uD83D\uDCCB Devis de reparation</div>';
+    h+='<div class="devis-prix">'+cout.toLocaleString('fr-FR')+'<span style="font-size:16px;font-weight:700"> DA</span></div>';
+    if(vers>0) h+='<div style="font-size:13px;color:var(--soft);margin-top:6px">Acompte : '+vers.toLocaleString('fr-FR')+' DA</div>';
+    if(reste>0 && vers>0) h+='<div style="font-size:16px;font-weight:800;color:var(--red);margin-top:4px">Reste : '+reste.toLocaleString('fr-FR')+' DA</div>';
+    h+='</div>';
+    if(b.panne) h+='<div style="padding:0 16px 10px;font-size:13px;color:var(--soft);text-align:center">'+esc(b.panne)+'</div>';
+    if(b.remarque) h+='<div class="devis-note">\uD83D\uDCDD <b>Note du technicien</b><br>'+esc(b.remarque)+'</div>';
+    h+='<div style="padding:0 16px;font-size:11.5px;color:var(--mute);text-align:center;margin-bottom:12px;line-height:1.5">En acceptant, vous autorisez Ilyes Phone Service a proceder a la reparation au tarif indique.</div>';
+    h+='<div id="devis-btns"><div class="devis-btns">';
+    h+='<button class="btn-refuse" onclick="devisReply(false)">\u274C Refuser</button>';
+    h+='<button class="btn-accept" onclick="devisReply(true)">\u2705 Accepter</button>';
+    h+='</div></div>';
+    h+='</div>';
+  }
+
+  // Infos appareil
+  h+='<div class="cd">';
+  h+='<div class="lb">Appareil</div><div class="vl">'+esc(b.mod||'\u2014')+'</div>';
+  h+='<div class="lb">Panne declaree</div><div class="vl" style="font-size:13px;font-weight:400;color:var(--soft)">'+esc(b.panne||'\u2014')+'</div>';
+  h+='</div>';
+
+  // Timeline
+  h+='<div class="cd-flush"><div style="padding:12px 16px"><div class="lb">Chronologie</div></div>';
+  for(var j=0;j<total;j++){
+    var n=j+1, cls=n<step?'done':(n===step?'now':'wait');
+    h+='<div class="tl-item">';
+    h+='<div class="tl-dot '+cls+'">'+(n<step?'\u2713':SICONS[j])+'</div>';
+    h+='<div class="tl-txt"><div class="nm"'+(cls==='wait'?' style="opacity:.3"':'')+'>'+STEPS[j]+'</div>';
+    h+='<div class="ds"'+(cls==='wait'?' style="opacity:.2"':'')+'>'+SDESC[j]+'</div>';
+    if(cls==='now') h+='<div class="active-tag" style="background:'+s.bg+';color:'+s.color+'">\u25CF En cours</div>';
+    h+='</div></div>';
+  }
+  h+='</div>';
+
+  // Finance
+  if(b.cout && b.s!=='d'){
+    var cout2=Number(b.cout)||0, vers2=Number(b.vers)||0, reste2=Math.max(0,cout2-vers2);
+    h+='<div class="cd"><div class="lb">Paiement</div><div class="fin-grid">';
+    h+='<div class="fin-cell"><div class="n">'+cout2.toLocaleString('fr-FR')+'</div><div class="l">Total (DA)</div></div>';
+    if(vers2>0){
+      h+='<div class="fin-cell"><div class="n" style="color:var(--green)">'+vers2.toLocaleString('fr-FR')+'</div><div class="l">Acompte</div></div>';
+      if(reste2>0) h+='<div class="fin-cell accent" style="grid-column:span 2"><div class="n">'+reste2.toLocaleString('fr-FR')+' DA</div><div class="l">Reste a payer</div></div>';
+      else h+='<div class="fin-cell paid" style="grid-column:span 2"><div class="n">\u2713 Paye integralement</div></div>';
+    }
+    h+='</div></div>';
+  }
+
+  // Code-barres Code 128B du numéro de bon
+  var bcText = String(b.id);
+  var bcSvg = renderBarcodeSVG(bcText, 220, 50);
+  h+='<div class="cd" style="text-align:center"><div class="barcode">'+bcSvg+'<div class="num">BON N\u00B0 '+b.id+'</div></div></div>';
+
+  // Actions
+  h+='<div class="actions">';
+  h+='<a class="act-btn wa" href="https://wa.me/213540101412?text='+encodeURIComponent('Bonjour, je vous contacte au sujet de mon '+esc(b.mod||'appareil')+' (bon #'+b.id+'). Merci.')+'">';
+  h+='<span class="ico">\uD83D\uDCAC</span><span>Contacter l\'atelier par WhatsApp</span></a>';
+  h+='<a class="act-btn" href="tel:+213540101412"><span class="ico">\uD83D\uDCDE</span><span>Appeler 0540 10 14 12</span></a>';
+  h+='</div>';
+
+  document.getElementById('main').innerHTML=h;
+
+  // Garantie
+  var gh='';
+  if(b.s==='r'||b.s==='g'){
+    gh+='<div class="gar-card">';
+    gh+='<div style="font-size:13px;color:var(--soft)">\uD83D\uDEE1\uFE0F Certificat de garantie</div>';
+    gh+='<div class="days">30 JOURS</div>';
+    gh+='<div class="label">sur la reparation effectuee</div>';
+    gh+='<div class="detail">Bon #'+b.id+' \u00B7 '+esc(b.mod||'')+' \u00B7 '+esc(b.panne||'')+'<br>'+esc(b.date||'')+' \u00B7 Ilyes Phone Service</div>';
+    gh+='</div>';
+    gh+='<div class="cd"><div class="lb">Conditions</div><div style="font-size:12.5px;color:var(--soft);line-height:1.65;margin-top:6px">';
+    gh+='\u2022 Couvre le defaut repare uniquement.<br>';
+    gh+='\u2022 Exclut les dommages physiques, l\'oxydation et les interventions tierces.<br>';
+    gh+='\u2022 Presentez ce QR code ou votre ticket pour toute reclamation.</div></div>';
+  } else {
+    gh+='<div class="cd" style="text-align:center;padding:28px;color:var(--soft);font-size:13px">Le certificat de garantie sera disponible une fois la reparation terminee.</div>';
+  }
+  document.getElementById('gar-content').innerHTML=gh;
+}
+
+// Devis reply
+function devisReply(accept){
+  if(!B) return;
+  var decision = accept ? 'accepte' : 'refuse';
+  var zone=document.getElementById('devis-btns');
+  if(zone) zone.innerHTML='<div style="text-align:center;padding:22px;color:var(--soft)">Envoi\u2026</div>';
+  var payload = {bon_id:String(B.id), decision:decision, modele:B.mod||'', date_reponse:new Date().toISOString()};
+
+  // Priorité 1 : Cloud Supabase (fonctionne en 4G)
+  var cu = CLOUD_URL || CLOUD_FALLBACK_URL || '';
+  var ck = CLOUD_KEY || CLOUD_FALLBACK_KEY || '';
+  if(cu && ck){
+    fetch(cu + '/rest/v1/devis_reponses', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':ck,'Authorization':'Bearer '+ck,'Prefer':'return=minimal'},
+      body:JSON.stringify(payload)
+    }).then(function(r){
+      if(r.ok || r.status===201) showResult(accept, true);
+      else tryLocalServer(accept, payload);
+    }).catch(function(){ tryLocalServer(accept, payload); });
+    return;
+  }
+  // Priorité 2 : serveur local
+  tryLocalServer(accept, payload);
+}
+
+function tryLocalServer(accept, payload){
+  fetch(location.origin + '/devis-reponse', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({bon:payload.bon_id, decision:payload.decision})
+  }).then(function(r){ return r.json(); })
+    .then(function(d){ showResult(accept, d && d.ok); })
+    .catch(function(){ showResult(accept, false); });
+}
+
+
+function showResult(accept, ok){
+  var zone=document.getElementById('devis-btns');
+  if(!zone) return;
+  if(accept){
+    var h='<div style="text-align:center;padding:24px"><div style="font-size:52px">\u2705</div>';
+    h+='<div style="font-size:18px;font-weight:800;margin:12px 0;color:var(--white)">Devis accepte !</div>';
+    if(ok){
+      h+='<div style="font-size:14px;color:var(--green);font-weight:600">\u2713 L\'atelier a bien recu votre reponse.</div>';
+      h+='<div style="font-size:13px;color:var(--soft);margin-top:8px;line-height:1.5">La reparation va commencer.<br>Vous serez prevenu quand votre appareil sera pret.</div>';
+    } else {
+      h+='<div style="font-size:13px;color:var(--red)">La reponse n\'a pas pu etre envoyee. Veuillez contacter l\'atelier au 0540 10 14 12.</div>';
+    }
+    h+='</div>';
+    zone.innerHTML=h;
+  } else {
+    var h='<div style="text-align:center;padding:24px"><div style="font-size:52px">\u274C</div>';
+    h+='<div style="font-size:18px;font-weight:800;margin:12px 0;color:var(--white)">Devis refuse</div>';
+    if(ok){
+      h+='<div style="font-size:14px;color:var(--soft);font-weight:600">\u2713 L\'atelier a ete informe.</div>';
+      h+='<div style="font-size:13px;color:var(--soft);margin-top:8px">Vous pouvez passer recuperer votre appareil a l\'atelier.</div>';
+    } else {
+      h+='<div style="font-size:13px;color:var(--red)">La reponse n\'a pas pu etre envoyee. Veuillez contacter l\'atelier au 0540 10 14 12.</div>';
+    }
+    h+='</div>';
+    zone.innerHTML=h;
+  }
+}
+
+// Stars
+var rating=0;
+(function(){var box=document.getElementById('stars-box');for(var i=1;i<=5;i++){var s=document.createElement('span');s.className='star';s.textContent='\u2B50';s.dataset.v=i;s.onclick=function(){rating=Number(this.dataset.v);document.querySelectorAll('.star').forEach(function(x){x.classList.toggle('lit',Number(x.dataset.v)<=rating)})};box.appendChild(s);}})();
+function sendAvis(){if(!rating)return;
+  var msg='Avis client'+(B?' (bon #'+B.id+')':'')+' : '+rating+'/5'+(document.getElementById('avis-txt').value.trim()?' - '+document.getElementById('avis-txt').value.trim():'');
+  try{fetch('/client-avis',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bon:B?B.id:'',rating:rating,comment:(document.getElementById('avis-txt')||{}).value||''})}).catch(function(){});}catch(e){}
+  document.getElementById('avis-form').classList.add('hidden');document.getElementById('avis-ok').classList.remove('hidden');
+}
+</script>
+</body>
+</html>
