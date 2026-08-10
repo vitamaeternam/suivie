@@ -225,10 +225,35 @@ var STEPS=['Recu','Diagnostic','Reparation','Tests','Pret','Recupere'];
 var SICONS=['\uD83D\uDCE5','\uD83D\uDD0D','\uD83D\uDD27','\uD83E\uDDEA','\uD83D\uDCF1','\u2705'];
 var SDESC=['Appareil recu a l\'atelier','Analyse de la panne','Intervention technique','Verification du fonctionnement','Pret a recuperer','Rendu au client'];
 
+// Au chargement : vérifier si le client a déjà répondu au devis
+function checkExistingResponse(){
+  if(!B) return;
+  var cu = CLOUD_URL || CLOUD_FALLBACK_URL || '';
+  var ck = CLOUD_KEY || CLOUD_FALLBACK_KEY || '';
+  if(!cu || !ck) return;
+  fetch(cu + '/rest/v1/devis_reponses?bon_id=eq.' + B.id + '&order=date_reponse.desc&limit=1', {
+    headers:{'apikey':ck,'Authorization':'Bearer '+ck}
+  }).then(function(r){ return r.json(); })
+    .then(function(rows){
+      if(!Array.isArray(rows) || !rows.length) return;
+      var rep = rows[0];
+      if(rep.decision === 'accepte'){
+        // Le client a déjà accepté → passer en statut "en cours"
+        B.s = 'c';
+        render(B);
+      } else if(rep.decision === 'refuse'){
+        // Le client a refusé → afficher un message
+        B.s = 'n';
+        B._refused = true;
+        render(B);
+      }
+    }).catch(function(){});
+}
+
 if(!B){
   document.getElementById('main').innerHTML='<div class="cd" style="text-align:center;padding:36px"><div style="font-size:44px">\uD83D\uDD0D</div><div style="font-size:16px;font-weight:700;margin:10px 0;color:var(--white)">Lien invalide</div><div style="font-size:13px;color:var(--soft);line-height:1.5">Scannez le QR code sur votre ticket<br>ou contactez le 0540 10 14 12</div></div>';
   document.getElementById('seg').innerHTML='';
-} else { render(B); }
+} else { render(B); checkExistingResponse(); }
 
 function render(b){
   var s=ST[b.s]||ST.c, step=s.step, total=6;
@@ -388,6 +413,7 @@ function showResult(accept, ok){
     if(ok){
       h+='<div style="font-size:14px;color:var(--green);font-weight:600">\u2713 L\'atelier a bien recu votre reponse.</div>';
       h+='<div style="font-size:13px;color:var(--soft);margin-top:8px;line-height:1.5">La reparation va commencer.<br>Vous serez prevenu quand votre appareil sera pret.</div>';
+      setTimeout(function(){ B.s='c'; render(B); }, 2500);
     } else {
       h+='<div style="font-size:13px;color:var(--red)">La reponse n\'a pas pu etre envoyee. Veuillez contacter l\'atelier au 0540 10 14 12.</div>';
     }
@@ -398,6 +424,7 @@ function showResult(accept, ok){
     h+='<div style="font-size:18px;font-weight:800;margin:12px 0;color:var(--white)">Devis refuse</div>';
     if(ok){
       h+='<div style="font-size:14px;color:var(--soft);font-weight:600">\u2713 L\'atelier a ete informe.</div>';
+      setTimeout(function(){ B.s='a'; render(B); }, 2500);
       h+='<div style="font-size:13px;color:var(--soft);margin-top:8px">Vous pouvez passer recuperer votre appareil a l\'atelier.</div>';
     } else {
       h+='<div style="font-size:13px;color:var(--red)">La reponse n\'a pas pu etre envoyee. Veuillez contacter l\'atelier au 0540 10 14 12.</div>';
