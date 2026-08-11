@@ -359,10 +359,10 @@ function render(b){
     h+='</div></div>';
   }
 
-  // Code-barres Code 128B du numéro de bon
-  var bcText = String(b.id);
+  // Code-barres Code 128B (identique au ticket imprimé)
+  var bcText = b.bc || String(b.id);
   var bcSvg = renderBarcodeSVG(bcText, 220, 50);
-  h+='<div class="cd" style="text-align:center"><div class="barcode">'+bcSvg+'<div class="num">BON N\u00B0 '+b.id+'</div></div></div>';
+  h+='<div class="cd" style="text-align:center"><div class="barcode">'+bcSvg+'<div class="num">' + bcText + '  \u2014  Bon #'+b.id+'</div></div></div>';
 
   // Actions
   h+='<div class="actions">';
