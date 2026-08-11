@@ -93,6 +93,21 @@ textarea{width:100%;background:var(--sf2);border:1px solid var(--brd);border-rad
 /* ── Horaires ── */
 .hours-row{display:flex;justify-content:space-between;padding:8px 0;font-size:13.5px;font-weight:500}
 .hours-row+.hours-row{border-top:1px solid var(--brd)}
+
+.login-box{max-width:360px;margin:30px auto;padding:0 14px}
+.login-card{background:var(--sf);border:1px solid var(--brd);border-radius:18px;padding:24px 20px;text-align:center}
+.login-card h2{font-size:18px;font-weight:800;color:var(--white);margin-bottom:4px}
+.login-card .sub2{font-size:13px;color:var(--soft);margin-bottom:18px;line-height:1.5}
+.login-input{width:100%;padding:14px 16px;background:var(--sf2);border:1.5px solid var(--brd);border-radius:12px;
+  color:var(--ink);font-family:inherit;font-size:15px;font-weight:600;margin-bottom:10px;text-align:center;letter-spacing:1px}
+.login-input:focus{outline:none;border-color:var(--orange)}
+.login-input::placeholder{color:var(--mute);font-weight:400;letter-spacing:0}
+.login-btn{width:100%;padding:15px;border-radius:12px;border:none;font-size:15px;font-weight:800;
+  font-family:inherit;cursor:pointer;background:var(--orange);color:#fff;margin-top:4px}
+.login-btn:disabled{opacity:.5}
+.login-err{color:var(--red);font-size:13px;margin-top:10px;display:none}
+.login-or{display:flex;align-items:center;gap:12px;margin:18px 0;color:var(--mute);font-size:12px}
+.login-or::before,.login-or::after{content:'';flex:1;height:1px;background:var(--brd)}
 </style>
 </head>
 <body>
@@ -149,6 +164,20 @@ textarea{width:100%;background:var(--sf2);border:1px solid var(--brd);border-rad
       <div class="hours-row"><span>Jeudi</span><span style="color:var(--white)">09:00 — 19:00</span></div>
       <div class="hours-row"><span style="color:var(--red)">Vendredi</span><span style="color:var(--red)">Ferme</span></div>
     </div>
+  </div>
+</div>
+
+<div id="login-page" class="login-box" style="display:none">
+  <div class="login-card">
+    <div style="font-size:36px;margin-bottom:10px">&#x1F50F;</div>
+    <h2>Suivre ma reparation</h2>
+    <div class="sub2">Entrez les informations de votre ticket</div>
+    <input class="login-input" id="login-bon" type="text" placeholder="Numero de bon (ex: 94)" inputmode="numeric">
+    <input class="login-input" id="login-code" type="text" placeholder="Code du ticket (6 chiffres)" inputmode="numeric" maxlength="6">
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Voir mon suivi</button>
+    <div class="login-err" id="login-err"></div>
+    <div class="login-or">ou</div>
+    <div style="font-size:13px;color:var(--soft);line-height:1.6">Scannez le <b>QR code</b> sur votre ticket pour un acces direct.</div>
   </div>
 </div>
 
@@ -226,6 +255,40 @@ var SICONS=['\uD83D\uDCE5','\uD83D\uDD0D','\uD83D\uDD27','\uD83E\uDDEA','\uD83D\
 var SDESC=['Appareil recu a l\'atelier','Analyse de la panne','Intervention technique','Verification du fonctionnement','Pret a recuperer','Rendu au client'];
 
 // Au chargement : vérifier si le client a déjà répondu au devis
+function doLogin(){
+  var bonId=(document.getElementById('login-bon').value||'').trim();
+  var code=(document.getElementById('login-code').value||'').trim();
+  var err=document.getElementById('login-err');
+  var btn=document.getElementById('login-btn');
+  if(!bonId||!code){err.textContent='Remplissez les deux champs.';err.style.display='block';return;}
+  err.style.display='none';
+  btn.disabled=true;btn.textContent='Recherche...';
+  var cu=CLOUD_URL||CLOUD_FALLBACK_URL||'';
+  var ck=CLOUD_KEY||CLOUD_FALLBACK_KEY||'';
+  if(!cu||!ck){err.textContent='Service indisponible.';err.style.display='block';btn.disabled=false;btn.textContent='Voir mon suivi';return;}
+  fetch(cu+'/rest/v1/bons_suivi?bon_id=eq.'+encodeURIComponent(bonId)+'&limit=1',{
+    headers:{'apikey':ck,'Authorization':'Bearer '+ck}
+  }).then(function(r){return r.json()})
+    .then(function(rows){
+      btn.disabled=false;btn.textContent='Voir mon suivi';
+      if(!Array.isArray(rows)||!rows.length){err.textContent='Bon introuvable.';err.style.display='block';return;}
+      try{
+        var decoded=JSON.parse(decodeURIComponent(escape(atob(rows[0].data))));
+        if(decoded.bc&&decoded.bc!==code){err.textContent='Code incorrect. Verifiez les 6 chiffres sur votre ticket.';err.style.display='block';return;}
+        B=decoded;
+        if(B._cu)CLOUD_URL=B._cu;
+        if(B._ck)CLOUD_KEY=B._ck;
+        document.getElementById('login-page').style.display='none';
+        document.querySelectorAll('.tabs').forEach(function(e){e.style.display=''});
+        document.querySelectorAll('.pane').forEach(function(e){e.style.display=''});
+        document.querySelector('.tab.on').click();
+        render(B);
+        checkExistingResponse();
+      }catch(e){err.textContent='Erreur de lecture.';err.style.display='block';}
+    }).catch(function(){btn.disabled=false;btn.textContent='Voir mon suivi';err.textContent='Connexion impossible. Verifiez votre internet.';err.style.display='block';});
+}
+document.addEventListener('keydown',function(e){if(e.key==='Enter'&&document.getElementById('login-page')&&document.getElementById('login-page').style.display!=='none')doLogin();});
+
 function checkExistingResponse(){
   if(!B) return;
   var cu = CLOUD_URL || CLOUD_FALLBACK_URL || '';
@@ -268,16 +331,79 @@ function checkExistingResponse(){
 }
 
 if(!B){
-  document.getElementById('main').innerHTML='<div class="cd" style="text-align:center;padding:36px"><div style="font-size:44px">\uD83D\uDD0D</div><div style="font-size:16px;font-weight:700;margin:10px 0;color:var(--white)">Lien invalide</div><div style="font-size:13px;color:var(--soft);line-height:1.5">Scannez le QR code sur votre ticket<br>ou contactez le 0540 10 14 12</div></div>';
-  document.getElementById('seg').innerHTML='';
+  document.getElementById('login-page').style.display='block';
+  document.querySelectorAll('.tabs').forEach(function(e){e.style.display='none'});
+  document.querySelectorAll('.pane').forEach(function(e){e.style.display='none'});
+  document.getElementById('hdr-title').textContent='Suivre ma reparation';
+  document.getElementById('hdr-sub').textContent='';
 } else {
-  // Le statut n'est plus dans l'URL (pour que le QR reste permanent)
-  // On détermine le statut depuis Supabase
-  if(!B.s) B.s = 'c';   // défaut : en cours
-  if(B.cout && Number(B.cout) > 0 && !B.s) B.s = 'd';   // s'il y a un coût, proposer le devis
+  if(!B.s) B.s = 'c';
   render(B);
   checkExistingResponse();
 }
+
+// Si pas de données dans le hash → afficher le formulaire de login
+if(!B && !location.hash.slice(1)){
+  showLoginForm();
+}
+
+function showLoginForm(){
+  document.getElementById('seg').innerHTML = '';
+  document.getElementById('hdr-title').textContent = 'Espace Client';
+  document.getElementById('hdr-sub').textContent = 'Connectez-vous pour suivre votre reparation';
+  // Cacher les onglets sauf suivi
+  document.querySelector('.tabs').style.display = 'none';
+  var h = '<div class="cd" style="max-width:360px;margin:0 auto">';
+  h += '<div style="text-align:center;font-size:38px;margin-bottom:12px">\uD83D\uDD10</div>';
+  h += '<div style="font-size:16px;font-weight:700;text-align:center;margin-bottom:16px;color:var(--white)">Suivi de reparation</div>';
+  h += '<div style="margin-bottom:12px"><label style="font-size:12px;font-weight:700;color:var(--soft);display:block;margin-bottom:4px">Numero de bon</label>';
+  h += '<input type="text" id="login-bon" placeholder="Ex: 94" inputmode="numeric" style="width:100%;padding:12px 14px;background:var(--sf2);border:1px solid var(--brd);border-radius:10px;color:var(--ink);font-size:15px;font-family:inherit"></div>';
+  h += '<div style="margin-bottom:16px"><label style="font-size:12px;font-weight:700;color:var(--soft);display:block;margin-bottom:4px">Code du ticket (6 chiffres)</label>';
+  h += '<input type="text" id="login-code" placeholder="Ex: 847291" maxlength="6" inputmode="numeric" style="width:100%;padding:12px 14px;background:var(--sf2);border:1px solid var(--brd);border-radius:10px;color:var(--ink);font-size:15px;font-family:inherit;letter-spacing:4px;text-align:center"></div>';
+  h += '<button onclick="doLogin()" style="width:100%;padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;background:var(--orange);color:#fff">Voir mon suivi</button>';
+  h += '<div id="login-error" style="font-size:13px;color:var(--red);text-align:center;margin-top:10px;display:none"></div>';
+  h += '<div style="font-size:12px;color:var(--mute);text-align:center;margin-top:14px;line-height:1.5">Le numero de bon et le code sont inscrits<br>sur votre ticket de depot.</div>';
+  h += '</div>';
+  document.getElementById('main').innerHTML = h;
+  // Focus sur le champ bon
+  try{ document.getElementById('login-bon').focus(); }catch(e){}
+  // Enter pour valider
+  document.getElementById('login-code').addEventListener('keyup', function(e){ if(e.key === 'Enter') doLogin(); });
+}
+
+function doLogin(){
+  var bonId = (document.getElementById('login-bon').value || '').trim();
+  var code = (document.getElementById('login-code').value || '').trim();
+  var errEl = document.getElementById('login-error');
+  if(!bonId || !code){ errEl.textContent = 'Remplissez les deux champs'; errEl.style.display = 'block'; return; }
+  errEl.textContent = 'Recherche...'; errEl.style.display = 'block'; errEl.style.color = 'var(--soft)';
+  var cu = CLOUD_URL || CLOUD_FALLBACK_URL || '';
+  var ck = CLOUD_KEY || CLOUD_FALLBACK_KEY || '';
+  if(!cu || !ck){ errEl.textContent = 'Service indisponible'; errEl.style.color = 'var(--red)'; return; }
+  fetch(cu + '/rest/v1/bons_suivi?bon_id=eq.' + encodeURIComponent(bonId) + '&limit=1', {
+    headers:{'apikey':ck,'Authorization':'Bearer '+ck}
+  }).then(function(r){ return r.json(); })
+    .then(function(rows){
+      if(!Array.isArray(rows) || !rows.length){
+        errEl.textContent = 'Bon introuvable. Verifiez votre numero.'; errEl.style.color = 'var(--red)'; return;
+      }
+      var bonData = JSON.parse(rows[0].data);
+      if(bonData.bc !== code){
+        errEl.textContent = 'Code incorrect. Verifiez le code sur votre ticket.'; errEl.style.color = 'var(--red)'; return;
+      }
+      // Login réussi → charger le suivi
+      B = bonData;
+      CLOUD_URL = bonData._cu || cu;
+      CLOUD_KEY = bonData._ck || ck;
+      document.querySelector('.tabs').style.display = 'flex';
+      if(!B.s) B.s = 'c';
+      render(B);
+      checkExistingResponse();
+    }).catch(function(e){
+      errEl.textContent = 'Erreur de connexion. Reessayez.'; errEl.style.color = 'var(--red)';
+    });
+}
+
 
 function render(b){
   var s=ST[b.s]||ST.c, step=s.step, total=6;
