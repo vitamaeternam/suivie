@@ -230,30 +230,54 @@ function checkExistingResponse(){
   if(!B) return;
   var cu = CLOUD_URL || CLOUD_FALLBACK_URL || '';
   var ck = CLOUD_KEY || CLOUD_FALLBACK_KEY || '';
-  if(!cu || !ck) return;
+  if(!cu || !ck){
+    // Pas de cloud : si le bon a un coût, montrer le devis
+    if(B.cout && Number(B.cout) > 0 && B.s !== 'r' && B.s !== 'g') B.s = 'd';
+    render(B);
+    return;
+  }
+  // Vérifier si le client a déjà répondu au devis
   fetch(cu + '/rest/v1/devis_reponses?bon_id=eq.' + B.id + '&order=date_reponse.desc&limit=1', {
     headers:{'apikey':ck,'Authorization':'Bearer '+ck}
   }).then(function(r){ return r.json(); })
     .then(function(rows){
-      if(!Array.isArray(rows) || !rows.length) return;
+      if(!Array.isArray(rows) || !rows.length){
+        // Pas de réponse : si le bon a un coût, montrer le devis
+        if(B.cout && Number(B.cout) > 0) B.s = 'd';
+        render(B);
+        return;
+      }
+      // Parcourir les réponses : la plus récente gagne
       var rep = rows[0];
-      if(rep.decision === 'accepte'){
-        // Le client a déjà accepté → passer en statut "en cours"
+      if(rep.decision.indexOf('statut_') === 0){
+        // Statut poussé par le technicien
+        B.s = rep.decision.replace('statut_', '');
+        render(B);
+      } else if(rep.decision === 'accepte'){
         B.s = 'c';
         render(B);
       } else if(rep.decision === 'refuse'){
-        // Le client a refusé → afficher un message
-        B.s = 'n';
-        B._refused = true;
+        B.s = 'a';
         render(B);
       }
-    }).catch(function(){});
+    }).catch(function(){
+      // Erreur réseau : montrer le devis si pertinent
+      if(B.cout && Number(B.cout) > 0) B.s = 'd';
+      render(B);
+    });
 }
 
 if(!B){
   document.getElementById('main').innerHTML='<div class="cd" style="text-align:center;padding:36px"><div style="font-size:44px">\uD83D\uDD0D</div><div style="font-size:16px;font-weight:700;margin:10px 0;color:var(--white)">Lien invalide</div><div style="font-size:13px;color:var(--soft);line-height:1.5">Scannez le QR code sur votre ticket<br>ou contactez le 0540 10 14 12</div></div>';
   document.getElementById('seg').innerHTML='';
-} else { render(B); checkExistingResponse(); }
+} else {
+  // Le statut n'est plus dans l'URL (pour que le QR reste permanent)
+  // On détermine le statut depuis Supabase
+  if(!B.s) B.s = 'c';   // défaut : en cours
+  if(B.cout && Number(B.cout) > 0 && !B.s) B.s = 'd';   // s'il y a un coût, proposer le devis
+  render(B);
+  checkExistingResponse();
+}
 
 function render(b){
   var s=ST[b.s]||ST.c, step=s.step, total=6;
