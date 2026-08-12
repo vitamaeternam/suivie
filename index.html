@@ -270,7 +270,6 @@ var SDESC=['Appareil recu a l\'atelier','Analyse de la panne','Intervention tech
 
 // Au chargement : vérifier si le client a déjà répondu au devis
 function doLogin(){
-  alert('DEBUG doLogin: bon=' + document.getElementById('login-bon').value + ' code=' + document.getElementById('login-code').value + ' CLOUD=' + (CLOUD_URL||CLOUD_FALLBACK_URL||'VIDE'));
   var bonId=(document.getElementById('login-bon').value||'').trim();
   var code=(document.getElementById('login-code').value||'').trim();
   var err=document.getElementById('login-err');
