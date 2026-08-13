@@ -200,248 +200,143 @@ document.querySelectorAll('.tab').forEach(function(t){t.onclick=function(){
   t.classList.add('on');var p=document.getElementById('p-'+t.dataset.p);if(p)p.classList.add('on');
 }});
 
-// ── Configuration cloud (Supabase) ──
-var CLOUD_URL = '';
-var CLOUD_KEY = '';
-// Les identifiants sont normalement injectés via le hash (_cu/_ck) — le fallback ci-dessous est pour le mode local
-var CLOUD_FALLBACK_URL = 'https://xgouaqyjpnkarhauzyyv.supabase.co';
-var CLOUD_FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhnb3VhcXlqcG5rYXJoYXV6eXl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMzAxMDMsImV4cCI6MjEwMTgwNjEwM30.P-KDRuWX1QclZ7-5F_OkVq-SxGAoL1c8y1alHqGWbdc';
+// ═══ CONFIGURATION ═══
+var SUPA_URL = 'https://xgouaqyjpnkarhauzyyv.supabase.co';
+var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhnb3VhcXlqcG5rYXJoYXV6eXl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMzAxMDMsImV4cCI6MjEwMTgwNjEwM30.P-KDRuWX1QclZ7-5F_OkVq-SxGAoL1c8y1alHqGWbdc';
+var B = null;
 
-// Data
-var B=null;
-var _hashRaw = location.hash.slice(1);
-var _loginMode = false;
-try{
-  if(_hashRaw){
-    var decoded = atob(_hashRaw);
-    if(decoded.indexOf(':') > 0 && decoded.indexOf('{') < 0){
-      // Format ID:CODE → charger depuis Supabase
-      _loginMode = true;
-      var parts = decoded.split(':');
-      var _bonId = parts[0];
-      var _bonCode = parts[1] || '';
-      // Charger après le DOM
-    } else {
-      // Ancien format JSON (compatibilité)
-      B = JSON.parse(decodeURIComponent(escape(decoded)));
-      if(B && B._cu) CLOUD_URL = B._cu;
-      if(B && B._ck) CLOUD_KEY = B._ck;
-    }
-  }
-}catch(e){}
-
-// ── Code-barres Code 128B (même format que le ticket imprimé) ──
-function c128Encode(text){
-  var C128={32:0,33:1,34:2,35:3,36:4,37:5,38:6,39:7,40:8,41:9,42:10,43:11,44:12,45:13,46:14,47:15,48:16,49:17,50:18,51:19,52:20,53:21,54:22,55:23,56:24,57:25,58:26,59:27,60:28,61:29,62:30,63:31,64:32,65:33,66:34,67:35,68:36,69:37,70:38,71:39,72:40,73:41,74:42,75:43,76:44,77:45,78:46,79:47,80:48,81:49,82:50,83:51,84:52,85:53,86:54,87:55,88:56,89:57,90:58,91:59,92:60,93:61,94:62,95:63,96:64,97:65,98:66,99:67,100:68,101:69,102:70,103:71,104:72,105:73,106:74,107:75,108:76,109:77,110:78,111:79,112:80,113:81,114:82,115:83,116:84,117:85,118:86,119:87,120:88,121:89,122:90,123:91,124:92,125:93,126:94};
-  var PAT=['11011001100','11001101100','11001100110','10010011000','10010001100','10001001100','10011001000','10011000100','10001100100','11001001000','11001000100','11000100100','10110011100','10011011100','10011001110','10111001100','10011101100','10011100110','11001110010','11001011100','11001001110','11011100100','10011100010','10111101110','10111011000','10001110110','10001011110','10110001110','11101000110','11100010110','11011110100','11001011110','11110110100','11110010100','11110010010','11011011110','11011110110','11100110010','11110011010','10100110000','10100001100','10010110000','10010000110','10000101100','10000100110','10110010000','10110000100','10011010000','10011000010','10000110100','10000110010','11000010010','11001010000','11110111010','11000010100','10001111010','10100111100','10010111100','10000100010','10000101000','11101011110','11110101110','11010000100','11010010000','11010011100','1100011101011'];
-  var start=104;
-  var codes=[start];var sum=start;
-  for(var i=0;i<text.length;i++){var cc=C128[text.charCodeAt(i)];if(cc===undefined)cc=0;codes.push(cc);sum+=cc*(i+1);}
-  codes.push(sum%103);codes.push(106);
-  var bits='';for(var j=0;j<codes.length;j++)bits+=PAT[codes[j]];
-  return bits;
-}
-
-function renderBarcodeSVG(text, w, h){
-  var bits = c128Encode(text);
-  var bw = w / bits.length;
-  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'">';
-  for(var i=0;i<bits.length;i++){
-    if(bits[i]==='1') svg += '<rect x="'+(i*bw).toFixed(2)+'" y="0" width="'+bw.toFixed(2)+'" height="'+h+'" fill="#fff"/>';
-  }
-  svg += '</svg>';
-  return svg;
-}
-
-function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-
-var ST={
-  c:{lbl:'En cours de reparation',   icon:'\uD83D\uDD27',color:'var(--orange)',bg:'rgba(232,133,43,.12)',step:3},
-  a:{lbl:'En attente de piece',      icon:'\uD83D\uDCE6',color:'var(--mute)',  bg:'rgba(90,101,119,.12)',step:2},
-  d:{lbl:'Devis en attente',         icon:'\uD83D\uDCCB',color:'var(--purple)',bg:'rgba(139,92,246,.12)',step:2},
-  r:{lbl:'Repare',                   icon:'\u2705',      color:'var(--green)', bg:'rgba(46,204,113,.12)',step:5},
-  n:{lbl:'Non reparable',            icon:'\u274C',      color:'var(--red)',   bg:'rgba(231,76,60,.12)', step:5},
-  t:{lbl:'En test',                  icon:'\uD83D\uDD2C',color:'var(--teal)',  bg:'rgba(14,165,169,.12)',step:4},
-  g:{lbl:'Recupere',                 icon:'\uD83C\uDFE0',color:'var(--green)', bg:'rgba(46,204,113,.12)',step:6}
-};
-var STEPS=['Recu','Diagnostic','Reparation','Tests','Pret','Recupere'];
-var SICONS=['\uD83D\uDCE5','\uD83D\uDD0D','\uD83D\uDD27','\uD83E\uDDEA','\uD83D\uDCF1','\u2705'];
-var SDESC=['Appareil recu a l\'atelier','Analyse de la panne','Intervention technique','Verification du fonctionnement','Pret a recuperer','Rendu au client'];
-
-// Au chargement : vérifier si le client a déjà répondu au devis
-function doLogin(){
-  var bonId=(document.getElementById('login-bon').value||'').trim();
-  var code=(document.getElementById('login-code').value||'').trim();
-  var err=document.getElementById('login-err');
-  var btn=document.getElementById('login-btn');
-  if(!bonId||!code){err.textContent='Remplissez les deux champs.';err.style.display='block';return;}
-  err.style.display='none';
-  btn.disabled=true;btn.textContent='Recherche...';
-  var cu=CLOUD_URL||CLOUD_FALLBACK_URL||'';
-  var ck=CLOUD_KEY||CLOUD_FALLBACK_KEY||'';
-  if(!cu||!ck){err.textContent='Service indisponible.';err.style.display='block';btn.disabled=false;btn.textContent='Voir mon suivi';return;}
-  fetch(cu+'/rest/v1/bons_suivi?bon_id=eq.'+encodeURIComponent(bonId)+'&limit=1',{
-    headers:{'apikey':ck,'Authorization':'Bearer '+ck}
-  }).then(function(r){return r.json()})
-    .then(function(rows){
-      btn.disabled=false;btn.textContent='Voir mon suivi';
-      if(!Array.isArray(rows)||!rows.length){err.textContent='Bon introuvable.';err.style.display='block';return;}
-      try{
-        var decoded=JSON.parse(decodeURIComponent(escape(atob(rows[0].data))));
-        if(decoded.bc&&decoded.bc!==code){err.textContent='Code incorrect. Verifiez les 6 chiffres sur votre ticket.';err.style.display='block';return;}
-        B=decoded;
-        if(B._cu)CLOUD_URL=B._cu;
-        if(B._ck)CLOUD_KEY=B._ck;
-        document.getElementById('login-page').style.display='none';
-        document.querySelectorAll('.tabs').forEach(function(e){e.style.display=''});
-        document.querySelectorAll('.pane').forEach(function(e){e.style.display=''});
-        document.querySelector('.tab.on').click();
-        render(B);
-        checkExistingResponse();
-      }catch(e){err.textContent='Erreur de lecture.';err.style.display='block';}
-    }).catch(function(){btn.disabled=false;btn.textContent='Voir mon suivi';err.textContent='Connexion impossible. Verifiez votre internet.';err.style.display='block';});
-}
-document.addEventListener('keydown',function(e){if(e.key==='Enter'&&document.getElementById('login-page')&&document.getElementById('login-page').style.display!=='none')doLogin();});
-
-function checkExistingResponse(){
-  if(!B) return;
-  var cu = CLOUD_URL || CLOUD_FALLBACK_URL || '';
-  var ck = CLOUD_KEY || CLOUD_FALLBACK_KEY || '';
-  if(!cu || !ck){
-    // Pas de cloud : si le bon a un coût, montrer le devis
-    if(B.cout && Number(B.cout) > 0 && B.s !== 'r' && B.s !== 'g') B.s = 'd';
-    render(B);
+// ═══ CHARGEMENT ═══
+(function(){
+  var hash = location.hash.slice(1);
+  if(!hash){
+    // Pas de hash → formulaire de login
+    showLoginForm();
     return;
   }
-  // Vérifier si le client a déjà répondu au devis
-  fetch(cu + '/rest/v1/devis_reponses?bon_id=eq.' + B.id + '&order=date_reponse.desc&limit=1', {
-    headers:{'apikey':ck,'Authorization':'Bearer '+ck}
+
+  try{
+    var decoded = atob(hash);
+  }catch(e){
+    showLoginForm();
+    return;
+  }
+
+  // Format ID:CODE (nouveau, permanent)
+  if(decoded.indexOf(':') > 0 && decoded.indexOf('{') < 0){
+    var parts = decoded.split(':');
+    var bonId = parts[0];
+    var bonCode = parts[1] || '';
+    loadFromCloud(bonId);
+    return;
+  }
+
+  // Format JSON (ancien, compatibilité)
+  try{
+    B = JSON.parse(decodeURIComponent(escape(decoded)));
+    if(B._cu) SUPA_URL = B._cu;
+    if(B._ck) SUPA_KEY = B._ck;
+    if(!B.s) B.s = 'c';
+    render(B);
+    checkExistingResponse();
+  }catch(e){
+    showLoginForm();
+  }
+})();
+
+// Charger les données d'un bon depuis Supabase
+function loadFromCloud(bonId){
+  document.getElementById('hdr-title').textContent = 'Chargement...';
+  document.getElementById('main').innerHTML = '<div class="cd" style="text-align:center;padding:30px;color:var(--soft)">Chargement du bon #' + bonId + '...</div>';
+
+  fetch(SUPA_URL + '/rest/v1/bons_suivi?bon_id=eq.' + encodeURIComponent(bonId) + '&limit=1', {
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
   }).then(function(r){ return r.json(); })
     .then(function(rows){
       if(!Array.isArray(rows) || !rows.length){
-        // Pas de réponse : si le bon a un coût, montrer le devis
-        if(B.cout && Number(B.cout) > 0) B.s = 'd';
-        render(B);
+        document.getElementById('main').innerHTML = '<div class="cd" style="text-align:center;padding:30px"><div style="font-size:40px">\u274C</div><div style="font-size:15px;font-weight:700;margin:8px 0;color:var(--white)">Bon #' + bonId + ' introuvable</div><div style="font-size:13px;color:var(--soft)">Contactez l\'atelier au 0540 10 14 12</div></div>';
         return;
       }
-      // Parcourir les réponses : la plus récente gagne
-      var rep = rows[0];
-      if(rep.decision.indexOf('statut_') === 0){
-        // Statut poussé par le technicien
-        B.s = rep.decision.replace('statut_', '');
-        render(B);
-      } else if(rep.decision === 'accepte'){
-        B.s = 'c';
-        render(B);
-      } else if(rep.decision === 'refuse'){
-        B.s = 'a';
-        render(B);
-      }
-    }).catch(function(){
-      // Erreur réseau : montrer le devis si pertinent
-      if(B.cout && Number(B.cout) > 0) B.s = 'd';
-      render(B);
-    });
-}
-
-if(!B){
-  document.getElementById('login-page').style.display='block';
-  document.querySelectorAll('.tabs').forEach(function(e){e.style.display='none'});
-  document.querySelectorAll('.pane').forEach(function(e){e.style.display='none'});
-  document.getElementById('hdr-title').textContent='Suivre ma reparation';
-  document.getElementById('hdr-sub').textContent='';
-} else {
-  if(!B.s) B.s = 'c';
-  render(B);
-  checkExistingResponse();
-}
-
-// Si pas de données dans le hash → afficher le formulaire de login
-if(_loginMode){
-  // Charger les données du bon depuis Supabase
-  var _cu = CLOUD_URL || CLOUD_FALLBACK_URL || '';
-  var _ck = CLOUD_KEY || CLOUD_FALLBACK_KEY || '';
-  if(_cu && _ck){
-    document.getElementById('main').innerHTML = '<div class="cd" style="text-align:center;padding:30px;color:var(--soft)">Chargement...</div>';
-    fetch(_cu + '/rest/v1/bons_suivi?bon_id=eq.' + encodeURIComponent(_bonId) + '&limit=1', {
-      headers:{'apikey':_ck,'Authorization':'Bearer '+_ck}
-    }).then(function(r){ return r.json(); })
-      .then(function(rows){
-        if(!Array.isArray(rows) || !rows.length){
-          document.getElementById('main').innerHTML = '<div class="cd" style="text-align:center;padding:30px"><div style="font-size:40px">\u274C</div><div style="font-size:15px;font-weight:700;margin:8px 0">Bon introuvable</div><div style="font-size:13px;color:var(--soft)">Contactez le 0540 10 14 12</div></div>';
-          return;
-        }
-        B = JSON.parse(rows[0].data);
-        if(B._cu) CLOUD_URL = B._cu;
-        if(B._ck) CLOUD_KEY = B._ck;
-        if(!B.s) B.s = 'c';
-        render(B);
-        checkExistingResponse();
-      }).catch(function(){
-        document.getElementById('main').innerHTML = '<div class="cd" style="text-align:center;padding:30px"><div style="font-size:40px">\u26A0\uFE0F</div><div style="font-size:15px;font-weight:700;margin:8px 0">Erreur de connexion</div><div style="font-size:13px;color:var(--soft)">Verifiez votre connexion internet</div></div>';
-      });
-  }
-} else if(!B && !_hashRaw){
-  showLoginForm();
-}
-
-function showLoginForm(){
-  document.getElementById('seg').innerHTML = '';
-  document.getElementById('hdr-title').textContent = 'Espace Client';
-  document.getElementById('hdr-sub').textContent = 'Connectez-vous pour suivre votre reparation';
-  // Cacher les onglets sauf suivi
-  document.querySelector('.tabs').style.display = 'none';
-  var h = '<div class="cd" style="max-width:360px;margin:0 auto">';
-  h += '<div style="text-align:center;font-size:38px;margin-bottom:12px">\uD83D\uDD10</div>';
-  h += '<div style="font-size:16px;font-weight:700;text-align:center;margin-bottom:16px;color:var(--white)">Suivi de reparation</div>';
-  h += '<div style="margin-bottom:12px"><label style="font-size:12px;font-weight:700;color:var(--soft);display:block;margin-bottom:4px">Numero de bon</label>';
-  h += '<input type="text" id="login-bon" placeholder="Ex: 94" inputmode="numeric" style="width:100%;padding:12px 14px;background:var(--sf2);border:1px solid var(--brd);border-radius:10px;color:var(--ink);font-size:15px;font-family:inherit"></div>';
-  h += '<div style="margin-bottom:16px"><label style="font-size:12px;font-weight:700;color:var(--soft);display:block;margin-bottom:4px">Code du ticket (6 chiffres)</label>';
-  h += '<input type="text" id="login-code" placeholder="Ex: 847291" maxlength="6" inputmode="numeric" style="width:100%;padding:12px 14px;background:var(--sf2);border:1px solid var(--brd);border-radius:10px;color:var(--ink);font-size:15px;font-family:inherit;letter-spacing:4px;text-align:center"></div>';
-  h += '<button onclick="doLogin()" style="width:100%;padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;background:var(--orange);color:#fff">Voir mon suivi</button>';
-  h += '<div id="login-error" style="font-size:13px;color:var(--red);text-align:center;margin-top:10px;display:none"></div>';
-  h += '<div style="font-size:12px;color:var(--mute);text-align:center;margin-top:14px;line-height:1.5">Le numero de bon et le code sont inscrits<br>sur votre ticket de depot.</div>';
-  h += '</div>';
-  document.getElementById('main').innerHTML = h;
-  // Focus sur le champ bon
-  try{ document.getElementById('login-bon').focus(); }catch(e){}
-  // Enter pour valider
-  document.getElementById('login-code').addEventListener('keyup', function(e){ if(e.key === 'Enter') doLogin(); });
-}
-
-function doLogin(){
-  var bonId = (document.getElementById('login-bon').value || '').trim();
-  var code = (document.getElementById('login-code').value || '').trim();
-  var errEl = document.getElementById('login-error');
-  if(!bonId || !code){ errEl.textContent = 'Remplissez les deux champs'; errEl.style.display = 'block'; return; }
-  errEl.textContent = 'Recherche...'; errEl.style.display = 'block'; errEl.style.color = 'var(--soft)';
-  var cu = CLOUD_URL || CLOUD_FALLBACK_URL || '';
-  var ck = CLOUD_KEY || CLOUD_FALLBACK_KEY || '';
-  if(!cu || !ck){ errEl.textContent = 'Service indisponible'; errEl.style.color = 'var(--red)'; return; }
-  fetch(cu + '/rest/v1/bons_suivi?bon_id=eq.' + encodeURIComponent(bonId) + '&limit=1', {
-    headers:{'apikey':ck,'Authorization':'Bearer '+ck}
-  }).then(function(r){ return r.json(); })
-    .then(function(rows){
-      if(!Array.isArray(rows) || !rows.length){
-        errEl.textContent = 'Bon introuvable. Verifiez votre numero.'; errEl.style.color = 'var(--red)'; return;
-      }
-      var bonData = JSON.parse(rows[0].data);
-      if(bonData.bc !== code){
-        errEl.textContent = 'Code incorrect. Verifiez le code sur votre ticket.'; errEl.style.color = 'var(--red)'; return;
-      }
-      // Login réussi → charger le suivi
-      B = bonData;
-      CLOUD_URL = bonData._cu || cu;
-      CLOUD_KEY = bonData._ck || ck;
-      document.querySelector('.tabs').style.display = 'flex';
+      B = JSON.parse(rows[0].data);
       if(!B.s) B.s = 'c';
       render(B);
       checkExistingResponse();
     }).catch(function(e){
-      errEl.textContent = 'Erreur de connexion. Reessayez.'; errEl.style.color = 'var(--red)';
+      document.getElementById('main').innerHTML = '<div class="cd" style="text-align:center;padding:30px"><div style="font-size:40px">\u26A0\uFE0F</div><div style="font-size:15px;font-weight:700;margin:8px 0;color:var(--white)">Erreur de connexion</div><div style="font-size:13px;color:var(--soft)">' + (e.message||'Verifiez votre connexion') + '</div></div>';
     });
 }
 
+// Vérifier le statut actuel (réponses aux devis, changements de statut)
+function checkExistingResponse(){
+  if(!B) return;
+  fetch(SUPA_URL + '/rest/v1/devis_reponses?bon_id=eq.' + B.id + '&order=date_reponse.desc&limit=1', {
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+  }).then(function(r){ return r.json(); })
+    .then(function(rows){
+      if(!Array.isArray(rows) || !rows.length){
+        if(B.cout && Number(B.cout) > 0 && (!B.s || B.s === 'c')) B.s = 'd';
+        render(B);
+        return;
+      }
+      var rep = rows[0];
+      if(rep.decision.indexOf('statut_') === 0){
+        B.s = rep.decision.replace('statut_', '');
+      } else if(rep.decision === 'accepte'){
+        B.s = 'c';
+      } else if(rep.decision === 'refuse'){
+        B.s = 'a';
+      }
+      render(B);
+    }).catch(function(){});
+}
+
+// Formulaire de login
+function showLoginForm(){
+  document.getElementById('seg').innerHTML = '';
+  document.getElementById('hdr-title').textContent = 'Espace Client';
+  document.getElementById('hdr-sub').textContent = 'Connectez-vous pour suivre votre reparation';
+  document.querySelector('.tabs').style.display = 'none';
+  var h = '<div class="cd" style="max-width:340px;margin:0 auto">';
+  h += '<div style="text-align:center;font-size:38px;margin-bottom:12px">\uD83D\uDD10</div>';
+  h += '<div style="font-size:16px;font-weight:700;text-align:center;margin-bottom:18px;color:var(--white)">Suivi de reparation</div>';
+  h += '<div style="margin-bottom:12px"><label style="font-size:12px;font-weight:700;color:var(--soft);display:block;margin-bottom:4px">Numero de bon</label>';
+  h += '<input type="text" id="login-bon" placeholder="Ex: 94" inputmode="numeric" style="width:100%;padding:13px;background:var(--sf2);border:1px solid var(--brd);border-radius:10px;color:var(--ink);font-size:16px;font-family:inherit"></div>';
+  h += '<div style="margin-bottom:18px"><label style="font-size:12px;font-weight:700;color:var(--soft);display:block;margin-bottom:4px">Code du ticket (6 chiffres)</label>';
+  h += '<input type="text" id="login-code" placeholder="Ex: 847291" maxlength="6" inputmode="numeric" style="width:100%;padding:13px;background:var(--sf2);border:1px solid var(--brd);border-radius:10px;color:var(--ink);font-size:18px;font-family:inherit;letter-spacing:6px;text-align:center"></div>';
+  h += '<button onclick="doLogin()" style="width:100%;padding:15px;border-radius:12px;border:none;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;background:var(--orange);color:#fff">Voir mon suivi</button>';
+  h += '<div id="login-error" style="font-size:13px;text-align:center;margin-top:10px;display:none"></div>';
+  h += '<div style="font-size:12px;color:var(--mute);text-align:center;margin-top:16px;line-height:1.5">Le numero et le code sont sur votre ticket.</div>';
+  h += '</div>';
+  document.getElementById('main').innerHTML = h;
+  document.getElementById('login-code').onkeyup = function(e){ if(e.key==='Enter') doLogin(); };
+}
+
+function doLogin(){
+  var bonId = (document.getElementById('login-bon').value||'').trim();
+  var code = (document.getElementById('login-code').value||'').trim();
+  var err = document.getElementById('login-error');
+  if(!bonId || !code){ err.textContent='Remplissez les deux champs'; err.style.display='block'; err.style.color='var(--red)'; return; }
+  err.textContent='Recherche...'; err.style.display='block'; err.style.color='var(--soft)';
+
+  fetch(SUPA_URL + '/rest/v1/bons_suivi?bon_id=eq.' + encodeURIComponent(bonId) + '&limit=1', {
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+  }).then(function(r){ return r.json(); })
+    .then(function(rows){
+      if(!Array.isArray(rows) || !rows.length){
+        err.textContent='Bon introuvable'; err.style.color='var(--red)'; return;
+      }
+      var data = JSON.parse(rows[0].data);
+      if(String(data.bc) !== String(code)){
+        err.textContent='Code incorrect'; err.style.color='var(--red)'; return;
+      }
+      B = data;
+      if(!B.s) B.s = 'c';
+      document.querySelector('.tabs').style.display = 'flex';
+      render(B);
+      checkExistingResponse();
+    }).catch(function(e){
+      err.textContent='Erreur de connexion'; err.style.color='var(--red)';
+    });
+}
 
 function render(b){
   var s=ST[b.s]||ST.c, step=s.step, total=6;
@@ -565,8 +460,8 @@ function devisReply(accept){
   var payload = {bon_id:String(B.id), decision:decision, modele:B.mod||'', date_reponse:new Date().toISOString()};
 
   // Priorité 1 : Cloud Supabase (fonctionne en 4G)
-  var cu = CLOUD_URL || CLOUD_FALLBACK_URL || '';
-  var ck = CLOUD_KEY || CLOUD_FALLBACK_KEY || '';
+  var cu = SUPA_URL;
+  var ck = SUPA_KEY;
   if(cu && ck){
     fetch(cu + '/rest/v1/devis_reponses', {
       method:'POST',
