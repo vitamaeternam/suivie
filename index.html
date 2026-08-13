@@ -249,9 +249,11 @@ function loadFromCloud(bonId){
   document.getElementById('main').innerHTML = '<div class="cd" style="text-align:center;padding:30px;color:var(--soft)">Chargement du bon #' + bonId + '...</div>';
 
   fetch(SUPA_URL + '/rest/v1/bons_suivi?bon_id=eq.' + encodeURIComponent(bonId) + '&limit=1', {
-    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
-  }).then(function(r){ return r.json(); })
-    .then(function(rows){
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Accept':'application/json'}
+  }).then(function(r){
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  }).then(function(rows){
       if(!Array.isArray(rows) || !rows.length){
         document.getElementById('main').innerHTML = '<div class="cd" style="text-align:center;padding:30px"><div style="font-size:40px">\u274C</div><div style="font-size:15px;font-weight:700;margin:8px 0;color:var(--white)">Bon #' + bonId + ' introuvable</div><div style="font-size:13px;color:var(--soft)">Contactez l\'atelier au 0540 10 14 12</div></div>';
         return;
@@ -261,7 +263,7 @@ function loadFromCloud(bonId){
       render(B);
       checkExistingResponse();
     }).catch(function(e){
-      document.getElementById('main').innerHTML = '<div class="cd" style="text-align:center;padding:30px"><div style="font-size:40px">\u26A0\uFE0F</div><div style="font-size:15px;font-weight:700;margin:8px 0;color:var(--white)">Erreur de connexion</div><div style="font-size:13px;color:var(--soft)">' + (e.message||'Verifiez votre connexion') + '</div></div>';
+      document.getElementById('main').innerHTML = '<div class="cd" style="text-align:center;padding:30px"><div style="font-size:40px">\u26A0\uFE0F</div><div style="font-size:15px;font-weight:700;margin:8px 0;color:var(--white)">Erreur de connexion</div><div style="font-size:13px;color:var(--soft)">' + (e.message||'Verifiez votre connexion') + '</div><div style="margin-top:12px"><button onclick="loadFromCloud(\'' + bonId + '\')" style="padding:10px 20px;background:var(--orange);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">Reessayer</button></div></div>';
     });
 }
 
@@ -269,8 +271,11 @@ function loadFromCloud(bonId){
 function checkExistingResponse(){
   if(!B) return;
   fetch(SUPA_URL + '/rest/v1/devis_reponses?bon_id=eq.' + B.id + '&order=date_reponse.desc&limit=1', {
-    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
-  }).then(function(r){ return r.json(); })
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Accept':'application/json'}
+  }).then(function(r){
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  })
     .then(function(rows){
       if(!Array.isArray(rows) || !rows.length){
         if(B.cout && Number(B.cout) > 0 && (!B.s || B.s === 'c')) B.s = 'd';
@@ -318,8 +323,11 @@ function doLogin(){
   err.textContent='Recherche...'; err.style.display='block'; err.style.color='var(--soft)';
 
   fetch(SUPA_URL + '/rest/v1/bons_suivi?bon_id=eq.' + encodeURIComponent(bonId) + '&limit=1', {
-    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
-  }).then(function(r){ return r.json(); })
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Accept':'application/json'}
+  }).then(function(r){
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  })
     .then(function(rows){
       if(!Array.isArray(rows) || !rows.length){
         err.textContent='Bon introuvable'; err.style.color='var(--red)'; return;
@@ -463,9 +471,9 @@ function devisReply(accept){
   var cu = SUPA_URL;
   var ck = SUPA_KEY;
   if(cu && ck){
-    fetch(cu + '/rest/v1/devis_reponses', {
+    fetch(SUPA_URL + '/rest/v1/devis_reponses', {
       method:'POST',
-      headers:{'Content-Type':'application/json','apikey':ck,'Authorization':'Bearer '+ck,'Prefer':'return=minimal'},
+      headers:{'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Prefer':'return=minimal'},
       body:JSON.stringify(payload)
     }).then(function(r){
       if(r.ok || r.status===201) showResult(accept, true);
