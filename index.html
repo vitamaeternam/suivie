@@ -206,10 +206,9 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 var B = null;
 
 // ═══ CHARGEMENT ═══
-(function(){
+function initPage(){
   var hash = location.hash.slice(1);
   if(!hash){
-    // Pas de hash → formulaire de login
     showLoginForm();
     return;
   }
@@ -225,7 +224,6 @@ var B = null;
   if(decoded.indexOf(':') > 0 && decoded.indexOf('{') < 0){
     var parts = decoded.split(':');
     var bonId = parts[0];
-    var bonCode = parts[1] || '';
     loadFromCloud(bonId);
     return;
   }
@@ -233,15 +231,13 @@ var B = null;
   // Format JSON (ancien, compatibilité)
   try{
     B = JSON.parse(decodeURIComponent(escape(decoded)));
-    if(B._cu) SUPA_URL = B._cu;
-    if(B._ck) SUPA_KEY = B._ck;
     if(!B.s) B.s = 'c';
     render(B);
     checkExistingResponse();
   }catch(e){
     showLoginForm();
   }
-})();
+}
 
 // Charger les données d'un bon depuis Supabase
 function loadFromCloud(bonId){
@@ -545,6 +541,8 @@ function sendAvis(){if(!rating)return;
   try{fetch('/client-avis',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bon:B?B.id:'',rating:rating,comment:(document.getElementById('avis-txt')||{}).value||''})}).catch(function(){});}catch(e){}
   document.getElementById('avis-form').classList.add('hidden');document.getElementById('avis-ok').classList.remove('hidden');
 }
+// Lancer au chargement
+initPage();
 </script>
 </body>
 </html>
