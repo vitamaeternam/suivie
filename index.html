@@ -258,7 +258,13 @@ function loadFromCloud(bonId){
         document.getElementById('main').innerHTML = '<div class="cd" style="text-align:center;padding:30px"><div style="font-size:40px">\u274C</div><div style="font-size:15px;font-weight:700;margin:8px 0;color:var(--white)">Bon #' + bonId + ' introuvable</div><div style="font-size:13px;color:var(--soft)">Contactez l\'atelier au 0540 10 14 12</div></div>';
         return;
       }
-      B = JSON.parse(rows[0].data);
+      // Les données peuvent être en JSON brut ou en base64
+      var rawData = rows[0].data;
+      try{ B = JSON.parse(rawData); }catch(e2){
+        try{ B = JSON.parse(decodeURIComponent(escape(atob(rawData)))); }catch(e3){
+          B = JSON.parse(atob(rawData));
+        }
+      }
       if(!B.s) B.s = 'c';
       render(B);
       checkExistingResponse();
@@ -332,7 +338,13 @@ function doLogin(){
       if(!Array.isArray(rows) || !rows.length){
         err.textContent='Bon introuvable'; err.style.color='var(--red)'; return;
       }
-      var data = JSON.parse(rows[0].data);
+      var rawData = rows[0].data;
+      var data;
+      try{ data = JSON.parse(rawData); }catch(e2){
+        try{ data = JSON.parse(decodeURIComponent(escape(atob(rawData)))); }catch(e3){
+          data = JSON.parse(atob(rawData));
+        }
+      }
       if(String(data.bc) !== String(code)){
         err.textContent='Code incorrect'; err.style.color='var(--red)'; return;
       }
